@@ -1,4 +1,4 @@
-# synch-users-from-external-database
+# synch_users_from_external_database
 Drupal 7
 
 Цель модуля следующая:
