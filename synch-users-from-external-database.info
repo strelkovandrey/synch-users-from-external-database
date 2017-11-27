@@ -1,0 +1,3 @@
+name = Synch users from external database
+description = Module for creating/updating users from external database
+core = 7.x
