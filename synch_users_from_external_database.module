@@ -2,41 +2,35 @@
 
 function synch_users_from_external_database_cron() {
 
-	// Get the nodes  
 	$conn = new mysqli("server", "user", "password", "database");
 	if ($conn->connect_error) {
 		watchdog ("synch_users_from_external_database","Can't connect to database");
 	}
   
-	$sql = "SELECT name, mail FROM users LIMIT 50";
+	$sql = "SELECT login, localmail FROM synch_users";
 	$result = $conn->query($sql);
    
-	// Setup the queue
 	$queue = DrupalQueue::get('synch_users_from_external_database');
 		foreach ($result as $row) {
+		watchdog ("synch_users_from_external_database","ROW=".$row["login"]);
+		
+		// Здесь успешно пишет в журнал
+		
 		$queue->createItem($row);
 	}
-   
-	// Create cache
-	drupal_flush_all_caches();
 }
 
 function synch_users_from_external_database_cron_queue_info() {
 	$queues['synch_users_from_external_database'] = array(
 		'worker callback' => 'synch_users_from_external_database_callback',
-		'time' => 15,
+		'time' => 1,
 	);
 	return $queues;
 }
 
 function synch_users_from_external_database_callback($data){
-	user_save(NULL, array(
-		'name' => 'Username',
-		'pass' => 'password',
-		'mail' => 'email@example.com',
-		'init' => 'email@example.com',
-		'status' => 1,
-		'roles' => array(DRUPAL_AUTHENTICATED_RID => TRUE),
-	));
-
+	watchdog ("synch_users_from_external_database","DATA=".$data["login"]);
+	
+	// Почему то пишет ошибку Notice: Undefined index: login in synch_users_from_external_database_callback()
+	
 }
