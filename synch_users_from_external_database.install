@@ -1,79 +1,129 @@
 <?php
 
-// Function creating fields
-						
-function createfield ($machinename, $label, $type, $widget) {
-	if (!field_info_field($machinename)) {
-		$field = array(
-			'field_name' => $machinename,
-			'type' => $type, 
-			);
-		field_create_field($field);
-		
-		$instance = array(
-			'field_name' => $machinename,
-			'entity_type' => 'user', 
-			'label' => $label,
-			'bundle' => 'user', 
-			'widget' => array(
-				'type' => $widget,
-			), 
-		);
-		field_create_instance($instance);
-	}
+// Function creating fields            
+function createfield ($machinename, $label) {
+  if (!field_info_field($machinename)) {
+    $field = array(
+      'field_name' => $machinename,
+      'type' => 'text', 
+      );
+    field_create_field($field);
+    
+    $instance = array(
+      'field_name' => $machinename,
+      'entity_type' => 'user', 
+      'label' => $label,
+      'bundle' => 'user', 
+      'widget' => array(
+        'type' => 'textfield',
+      ), 
+    );
+    field_create_instance($instance);
+  }
 }
 
 // Function deleting fields
-
 function deletefield ($machinename) {
-	if (field_info_field($machinename)) {
-		$instance = array(
-			'field_name' => $machinename,
-			'entity_type' => 'user',
-			'bundle' => 'user',
-		);
-		field_delete_instance($instance);
-		field_delete_field($instance['field_name']);
-	}
+  if (field_info_field($machinename)) {
+    $instance = array(
+      'field_name' => $machinename,
+      'entity_type' => 'user',
+      'bundle' => 'user',
+    );
+    field_delete_instance($instance);
+    field_delete_field($instance['field_name']);
+  }
 }
 
 // Function enable modules
-
 function synch_users_from_external_database_enable() {
 
-	$fieldscreate = array ( array ("field_user_full_name", "Full name", "text", "textfield"),
-						array ("field_user_surname", "Surname", "text", "textfield"),
-						array ("field_user_name", "Name", "text", "textfield"),
-						array ("field_user_patronymic", "Patronymic", "text", "textfield"),
-						array ("field_user_personnel_number", "Personnel number", "text", "textfield"),						
-						array ("field_user_position", "Position", "text", "textfield"),
-						array ("field_user_number_of_department", "Number of department", "text", "textfield"),						
-						array ("field_user_title_of_department", "Title of department", "text", "textfield"),						
-						array ("field_user_number_of_bureau", "Number of bureau", "text", "textfield"),						
-						array ("field_user_title_of_bureau", "Title of bureau", "text", "textfield"),						
-						array ("field_user_work_phone", "Work phone", "text", "textfield"),						
-						array ("field_user_is_working", "Is working", "list_boolean", "options_onoff"),						
-						array ("field_user_with_login", "With login", "list_boolean", "options_onoff")
-						);
+  $fieldscreate = array (
+    array ("field_user_full_name", "Full name"),
+    array ("field_user_surname", "Surname"),
+    array ("field_user_name", "Name"),
+    array ("field_user_patronymic", "Patronymic"),
+    array ("field_user_personnel_number", "Personnel number"),            
+    array ("field_user_position", "Position"),
+    array ("field_user_number_of_department", "Number of department"),            
+    array ("field_user_title_of_department", "Title of department"),            
+    array ("field_user_number_of_bureau", "Number of bureau"),            
+    array ("field_user_title_of_bureau", "Title of bureau"),            
+    array ("field_user_work_phone", "Work phone")
+    );
 
-	for ($i = 0;$i < count($fieldscreate); $i++) {
-		createfield($fieldscreate["$i"]["0"],$fieldscreate["$i"]["1"],$fieldscreate["$i"]["2"],$fieldscreate["$i"]["3"]);
-		}
-		
+  for ($i = 0;$i < count($fieldscreate); $i++) {
+    createfield($fieldscreate["$i"]["0"],$fieldscreate["$i"]["1"]);
+    }
+
+// Creating boolean fields	
+  if (!field_info_field('field_user_is_working')) {
+    $field = array(
+    'field_name' => 'field_user_is_working',
+    'type' => 'list_boolean',
+	'settings' => array (
+	  'allowed_values' => array (
+	    '0',
+		'1',
+	    ),
+	  ),
+    );
+    field_create_field($field);
+    
+    $instance = array(
+      'field_name' => 'field_user_is_working',
+      'entity_type' => 'user', 
+      'label' => 'Is working',
+      'bundle' => 'user', 
+      'widget' => array(
+        'type' => 'options_onoff',
+		'settings' => array (
+		  'display_label' => TRUE,
+		  ),
+      ), 
+    );
+    field_create_instance($instance);
+  }
+
+  if (!field_info_field('field_user_with_login')) {
+    $field = array(
+    'field_name' => 'field_user_with_login',
+    'type' => 'list_boolean',
+	'settings' => array (
+	  'allowed_values' => array (
+	    '0',
+		'1',
+	    ),
+	  ),
+    );
+    field_create_field($field);
+    
+    $instance = array(
+      'field_name' => 'field_user_with_login',
+      'entity_type' => 'user', 
+      'label' => 'With login',
+      'bundle' => 'user', 
+      'widget' => array(
+        'type' => 'options_onoff',
+		'settings' => array (
+		  'display_label' => TRUE,
+		  ),
+      ), 
+    );
+    field_create_instance($instance);
+  }
 }
 
 // Function disable modules
-
  function synch_users_from_external_database_disable() {
-	
-	$fieldsdelete = array ("field_user_full_name", "field_user_surname", "field_user_name", "field_user_patronymic", "field_user_personnel_number",
-							"field_user_position", "field_user_number_of_department", "field_user_title_of_department", "field_user_number_of_bureau",
-							"field_user_title_of_bureau", "field_user_work_phone", "field_user_is_working", "field_user_with_login");
-	
-	for ($i = 0;$i < count($fieldsdelete); $i++) {
-		deletefield($fieldsdelete["$i"]);
-		}
-		
+  
+  $fieldsdelete = array ("field_user_full_name", "field_user_surname", "field_user_name", "field_user_patronymic", "field_user_personnel_number",
+    "field_user_position", "field_user_number_of_department", "field_user_title_of_department", "field_user_number_of_bureau",
+    "field_user_title_of_bureau", "field_user_work_phone", "field_user_is_working", "field_user_with_login");
+  
+  for ($i = 0;$i < count($fieldsdelete); $i++) {
+    deletefield($fieldsdelete["$i"]);
+    }    
 }
 
 ?>
