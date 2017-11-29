@@ -15,15 +15,49 @@ function synch_users_from_external_database_menu() {
 function start_synch_users_from_external_database() {
   watchdog("synch_users_from_external_database","Start create queue");
   
-  $queue = DrupalQueue::get('synch_users_from_external_database');  
+  /* $queue = DrupalQueue::get('synch_users_from_external_database');   */
 
-  $conn=oci_connect("user", "password", "tnsname");
+/*   $conn=oci_connect("user", "password", "tnsname");
   $stid = oci_parse($conn, "SELECT username, fullname FROM \"User\" WHERE ROWNUM < 11");
-  oci_execute($stid);
+  oci_execute($stid); */
   
-  while ($row = oci_fetch_array($stid)) {
-    $queue->createItem($row);
-	watchdog("synch_users_from_external_database","Add item to row" . $row['USERNAME']);
+  $users = array(
+    array(
+      "login" => "user001",
+      "fullname" => "fullname001",
+      "email" => "user001@user.user",
+	  "personnel_number" => "001"
+    ),
+    array(
+      "login" => "user002",
+      "fullname" => "fullname002",
+      "email" => "user002@user.user",
+	  "personnel_number" => "002"
+    ),
+    array(
+      "login" => "user003",
+      "fullname" => "fullname003",
+      "email" => "user003@user.user",
+	  "personnel_number" => "003"
+    ),
+	array(
+      "login" => "user004",
+      "fullname" => "fullname004",
+      "email" => "user004@user.user",
+	  "personnel_number" => "004"
+    ),
+	array(
+      "login" => "user005",
+      "fullname" => "fullname005",
+      "email" => "user005@user.user",
+	  "personnel_number" => "005"
+    )
+  );
+  
+/*   while ($row = oci_fetch_array($stid)) { */
+    foreach ( $users as $user ) {
+    $queue->createItem($user);
+	watchdog("synch_users_from_external_database","Add item to row " . $user['login']);
   }
 }
 
@@ -53,18 +87,18 @@ function synch_users_from_external_database_callback($row){
     'mail' => $row['USERNAME'] . "@mail.vz",
     'init' => $row['USERNAME'] . "@mail.vz",
 	'field_user_full_name' => array(LANGUAGE_NONE => array(array('value' => $row['USERNAME']))),
-	'field_user_surname' => array(LANGUAGE_NONE => array(array('value' => $row['USERNAME']))),
+/* 	'field_user_surname' => array(LANGUAGE_NONE => array(array('value' => $row['USERNAME']))),
 	'field_user_name' => array(LANGUAGE_NONE => array(array('value' => $row['USERNAME']))),
-	'field_user_patronymic' => array(LANGUAGE_NONE => array(array('value' => $row['USERNAME']))),
+	'field_user_patronymic' => array(LANGUAGE_NONE => array(array('value' => $row['USERNAME']))), */
 	'field_user_personnel_number' => array(LANGUAGE_NONE => array(array('value' => $row['USERNAME']))),
-	'field_user_position' => array(LANGUAGE_NONE => array(array('value' => $row['USERNAME']))),
+/* 	'field_user_position' => array(LANGUAGE_NONE => array(array('value' => $row['USERNAME']))),
 	'field_user_number_of_department' => array(LANGUAGE_NONE => array(array('value' => $row['USERNAME']))),
 	'field_user_title_of_department' => array(LANGUAGE_NONE => array(array('value' => $row['USERNAME']))),
 	'field_user_number_of_bureau' => array(LANGUAGE_NONE => array(array('value' => $row['USERNAME']))),
 	'field_user_title_of_bureau' => array(LANGUAGE_NONE => array(array('value' => $row['USERNAME']))),
 	'field_user_work_phone' => array(LANGUAGE_NONE => array(array('value' => $row['USERNAME']))),
 	'field_user_is_working' => array('und' => array(0 => array('value' => 0))),
-	'field_user_with_login' => array('und' => array(0 => array('value' => 0))),
+	'field_user_with_login' => array('und' => array(0 => array('value' => 0))), */
     'status' => 1,
     'access' => REQUEST_TIME,
   );
