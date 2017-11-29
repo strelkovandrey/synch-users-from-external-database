@@ -26,31 +26,31 @@ function start_synch_users_from_external_database() {
       "login" => "user001",
       "fullname" => "fullname001",
       "email" => "user001@user.user",
-	  "personnel_number" => "001"
+      "personnel_number" => "001"
     ),
     array(
       "login" => "user002",
       "fullname" => "fullname002",
       "email" => "user002@user.user",
-	  "personnel_number" => "002"
+      "personnel_number" => "002"
     ),
     array(
       "login" => "user003",
       "fullname" => "fullname003",
       "email" => "user003@user.user",
-	  "personnel_number" => "003"
+      "personnel_number" => "003"
     ),
 	array(
       "login" => "user004",
       "fullname" => "fullname004",
       "email" => "user004@user.user",
-	  "personnel_number" => "004"
+      "personnel_number" => "004"
     ),
 	array(
       "login" => "user005",
       "fullname" => "fullname005",
       "email" => "user005@user.user",
-	  "personnel_number" => "005"
+      "personnel_number" => "005"
     )
   );
   
