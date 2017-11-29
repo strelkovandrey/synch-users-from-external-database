@@ -9,7 +9,6 @@ function synch_users_from_external_database_menu() {
     'page callback' => 'start_synch_users_from_external_database',
     'access callback' => TRUE,
   );
-
   return $items;
 }
 
@@ -18,8 +17,8 @@ function start_synch_users_from_external_database() {
   
   $queue = DrupalQueue::get('synch_users_from_external_database');  
 
-  $conn=oci_connect("user", "pass", "tns");
-  $stid = oci_parse($conn, "SELECT username, fullname FROM \"User\" WHERE ROWNUM < 6");
+  $conn=oci_connect("user", "password", "tnsname");
+  $stid = oci_parse($conn, "SELECT username, fullname FROM \"User\" WHERE ROWNUM < 11");
   oci_execute($stid);
   
   while ($row = oci_fetch_array($stid)) {
@@ -45,21 +44,14 @@ function synch_users_from_external_database_cron_queue_info() {
  */
 function synch_users_from_external_database_callback($row){
   watchdog("synch_users_from_external_database","Create user: ". $row["USERNAME"]);
-  
-/*   $query = new EntityFieldQuery();
-  $query->entityCondition('entity_type', 'user')
-  ->fieldCondition('field_user_personnel_number', 'value', $row["USERNAME"]);
-  $result = $query->execute();
-  $users_ids = array_keys($result['user']); */
-  
 
   /**
   * Creating user
   */
   $new_user = array(
     'name' => $row['USERNAME'],
-    'mail' => $row['USERNAME'] . "@mail.mail",
-    'init' => $row['USERNAME'] . "@mail.mail",
+    'mail' => $row['USERNAME'] . "@mail.vz",
+    'init' => $row['USERNAME'] . "@mail.vz",
 	'field_user_full_name' => array(LANGUAGE_NONE => array(array('value' => $row['USERNAME']))),
 	'field_user_surname' => array(LANGUAGE_NONE => array(array('value' => $row['USERNAME']))),
 	'field_user_name' => array(LANGUAGE_NONE => array(array('value' => $row['USERNAME']))),
@@ -71,7 +63,7 @@ function synch_users_from_external_database_callback($row){
 	'field_user_number_of_bureau' => array(LANGUAGE_NONE => array(array('value' => $row['USERNAME']))),
 	'field_user_title_of_bureau' => array(LANGUAGE_NONE => array(array('value' => $row['USERNAME']))),
 	'field_user_work_phone' => array(LANGUAGE_NONE => array(array('value' => $row['USERNAME']))),
-	'field_user_is_working' => array('und' => array(0 => array('value' => 1))),
+	'field_user_is_working' => array('und' => array(0 => array('value' => 0))),
 	'field_user_with_login' => array('und' => array(0 => array('value' => 0))),
     'status' => 1,
     'access' => REQUEST_TIME,
