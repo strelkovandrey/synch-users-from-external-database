@@ -1,36 +1,80 @@
 <?php
 
-function synch_users_from_external_database_cron() {
+/**
+ * Implements hook_menu().
+ */
+function synch_users_from_external_database_menu() {
+  $items['start'] = array(
+    'title' => 'Start synch',
+    'page callback' => 'start_synch_users_from_external_database',
+    'access callback' => TRUE,
+  );
 
-	$conn = new mysqli("server", "user", "password", "database");
-	if ($conn->connect_error) {
-		watchdog ("synch_users_from_external_database","Can't connect to database");
-	}
+  return $items;
+}
+
+function start_synch_users_from_external_database() {
+  watchdog("synch_users_from_external_database","Start create queue");
   
-	$sql = "SELECT login, localmail FROM synch_users";
-	$result = $conn->query($sql);
-   
-	$queue = DrupalQueue::get('synch_users_from_external_database');
-		foreach ($result as $row) {
-		watchdog ("synch_users_from_external_database","ROW=".$row["login"]);
-		
-		// Здесь успешно пишет в журнал
-		
-		$queue->createItem($row);
-	}
+  $queue = DrupalQueue::get('synch_users_from_external_database');  
+
+  $conn=oci_connect("user", "pass", "tns");
+  $stid = oci_parse($conn, "SELECT username, fullname FROM \"User\" WHERE ROWNUM < 6");
+  oci_execute($stid);
+  
+  while ($row = oci_fetch_array($stid)) {
+    $queue->createItem($row);
+	watchdog("synch_users_from_external_database","Add item to row" . $row['USERNAME']);
+  }
 }
 
+/**
+ * Implements hook_cron_queue_info()
+ */
 function synch_users_from_external_database_cron_queue_info() {
-	$queues['synch_users_from_external_database'] = array(
-		'worker callback' => 'synch_users_from_external_database_callback',
-		'time' => 1,
-	);
-	return $queues;
+  $queues['synch_users_from_external_database'] = array(
+    'worker callback' => 'synch_users_from_external_database_callback',
+    'time' => 30,
+	'skip on cron' => TRUE,
+  );
+  return $queues;
 }
 
-function synch_users_from_external_database_callback($data){
-	watchdog ("synch_users_from_external_database","DATA=".$data["login"]);
-	
-	// Почему то пишет ошибку Notice: Undefined index: login in synch_users_from_external_database_callback()
-	
+/**
+ * Worker callback defined in hook_cron_queue_info()
+ */
+function synch_users_from_external_database_callback($row){
+  watchdog("synch_users_from_external_database","Create user: ". $row["USERNAME"]);
+  
+/*   $query = new EntityFieldQuery();
+  $query->entityCondition('entity_type', 'user')
+  ->fieldCondition('field_user_personnel_number', 'value', $row["USERNAME"]);
+  $result = $query->execute();
+  $users_ids = array_keys($result['user']); */
+  
+
+  /**
+  * Creating user
+  */
+  $new_user = array(
+    'name' => $row['USERNAME'],
+    'mail' => $row['USERNAME'] . "@mail.mail",
+    'init' => $row['USERNAME'] . "@mail.mail",
+	'field_user_full_name' => array(LANGUAGE_NONE => array(array('value' => $row['USERNAME']))),
+	'field_user_surname' => array(LANGUAGE_NONE => array(array('value' => $row['USERNAME']))),
+	'field_user_name' => array(LANGUAGE_NONE => array(array('value' => $row['USERNAME']))),
+	'field_user_patronymic' => array(LANGUAGE_NONE => array(array('value' => $row['USERNAME']))),
+	'field_user_personnel_number' => array(LANGUAGE_NONE => array(array('value' => $row['USERNAME']))),
+	'field_user_position' => array(LANGUAGE_NONE => array(array('value' => $row['USERNAME']))),
+	'field_user_number_of_department' => array(LANGUAGE_NONE => array(array('value' => $row['USERNAME']))),
+	'field_user_title_of_department' => array(LANGUAGE_NONE => array(array('value' => $row['USERNAME']))),
+	'field_user_number_of_bureau' => array(LANGUAGE_NONE => array(array('value' => $row['USERNAME']))),
+	'field_user_title_of_bureau' => array(LANGUAGE_NONE => array(array('value' => $row['USERNAME']))),
+	'field_user_work_phone' => array(LANGUAGE_NONE => array(array('value' => $row['USERNAME']))),
+	'field_user_is_working' => array('und' => array(0 => array('value' => 1))),
+	'field_user_with_login' => array('und' => array(0 => array('value' => 0))),
+    'status' => 1,
+    'access' => REQUEST_TIME,
+  );
+  $account = user_save(null, $new_user);
 }
