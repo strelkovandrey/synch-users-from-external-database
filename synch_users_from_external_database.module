@@ -34,7 +34,7 @@ function synch_load_data() {
     $data[] = array(
       'login' => $result->login,
       'email' => $result->email,
-	  'personnel_number' => $result->personnel_number
+      'personnel_number' => $result->personnel_number
     ); 
   }
   return $data;
