@@ -15,7 +15,7 @@ function synch_users_from_external_database_menu() {
 function start_synch_users_from_external_database() {
   watchdog("synch_users_from_external_database","Start create queue");
   
-  /* $queue = DrupalQueue::get('synch_users_from_external_database');   */
+  $queue = DrupalQueue::get('synch_users_from_external_database');
 
 /*   $conn=oci_connect("user", "password", "tnsname");
   $stid = oci_parse($conn, "SELECT username, fullname FROM \"User\" WHERE ROWNUM < 11");
