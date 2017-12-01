@@ -4,24 +4,19 @@
  * Implements hook_menu().
  */
 function synch_users_from_external_database_menu() {
-  $items['user/synch/%'] = array(
+  $items['user/synch'] = array(
     'title' => '',
     'page callback' => 'start_synch_users_from_external_database',
-	  'page arguments' => array(3),
     'access callback' => TRUE,
   );
   return $items;
 }
 
-function start_synch_users_from_external_database($url_hash) {
-  $salt = variable_get('hash_salt');
-  $hash = hash('sha256', $salt . 'synch_users_password');
+/**
+ * Executing synch.
+ */
+function start_synch_users_from_external_database() {
+	
+  watchdog ("synch_users_from_external_database","Start synch URL visited");
   
-  if ($url_hash == $hash) {
-    watchdog ("synch_users_from_external_database","Hash true");
-  }
-  else {
-    watchdog ("synch_users_from_external_database","Hash false");
-	drupal_not_found();
-  }
 }
