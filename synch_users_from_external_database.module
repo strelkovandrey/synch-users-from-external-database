@@ -1,54 +1,27 @@
 <?php
 
 /**
- * Implements hook_cron_queue_info()
+ * Implements hook_menu().
  */
-function synch_cron_queue_info() {
-  $queues['synch'] = array(
-    'worker callback' => 'my_queue_process',
-    'time' => 30,
+function synch_users_from_external_database_menu() {
+  $items['user/synch/%'] = array(
+    'title' => '',
+    'page callback' => 'start_synch_users_from_external_database',
+	  'page arguments' => array(3),
+    'access callback' => TRUE,
   );
-  return $queues;
+  return $items;
 }
 
-/**
- * Implements hook_cron()
- */
-function synch_cron() {
-  $users_to_synch = synch_load_data();
-  if ($users_to_synch) {
-    $my_queue = DrupalQueue::get('synch');
-    foreach ($users_to_synch as $user_to_synch) {
-      $my_queue->createItem($user_to_synch);
-    }
-  }
-}
-
-function synch_load_data() {
-  $data = array();
-  db_set_active('custom');
-  $results = db_query("SELECT login, email, personnel_number FROM users");
-  db_set_active('default');
-
-  foreach ($results as $result) {
-    $data[] = array(
-      'login' => $result->login,
-      'email' => $result->email,
-      'personnel_number' => $result->personnel_number
-    ); 
-  }
-  return $data;
-}
-
-function my_queue_process ($data) {
-  watchdog("synch","Execute item from queue: ". $data['login'] . " " . $data['email'] . " " . $data['personnel_number']);
+function start_synch_users_from_external_database($url_hash) {
+  $salt = variable_get('hash_salt');
+  $hash = hash('sha256', $salt . 'synch_users_password');
   
-  user_save(NULL, array(
-  'name' => $data['login'],
-  'mail' => $data['email'],
-  'init' => $data['email'],
-  'field_user_personnel_number' => array(LANGUAGE_NONE => array(array('value' => $data["personnel_number"]))),
-  'status' => 1,
-  'roles' => array(DRUPAL_AUTHENTICATED_RID => TRUE),
-));
+  if ($url_hash == $hash) {
+    watchdog ("synch_users_from_external_database","Hash true");
+  }
+  else {
+    watchdog ("synch_users_from_external_database","Hash false");
+	drupal_not_found();
+  }
 }
