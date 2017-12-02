@@ -28,14 +28,15 @@ function start_synch_users_from_external_database() {
   
   // Check elements in queue
   if ($queue_for_synch_users->numberOfItems()) {
-	// Write to watch dog
-    watchdog ("synch_users_from_external_database","Queue not empty");
+    // Write to watch dog
+    $number_entries_in_queue = $queue_for_synch_users->numberOfItems();
+    watchdog ("synch_users_from_external_database","The queue is not empty and has " . $number_entries_in_queue . " records. Begin executing records...");
   } else
   {
-	// Write to watch dog
-	watchdog ("synch_users_from_external_database","Queue empty");
+    // Write to watch dog
+    watchdog ("synch_users_from_external_database","The queue is empty, start to fill...");
  	
-	$users = array(
+    $users = array(
       array(
         "login" => "user001",
         "fullname" => "fullname001",
@@ -54,13 +55,13 @@ function start_synch_users_from_external_database() {
         "email" => "user003@user.user",
         "personnel_number" => "003"
       ),
-	  array(
+      array(
         "login" => "user004",
         "fullname" => "fullname004",
         "email" => "user004@user.user",
         "personnel_number" => "004"
       ),
-	  array(
+      array(
         "login" => "user005",
         "fullname" => "fullname005",
         "email" => "user005@user.user",
@@ -71,6 +72,11 @@ function start_synch_users_from_external_database() {
     foreach ( $users as $user ) {
       $queue_for_synch_users->createItem($user);
 	  watchdog("synch_users_from_external_database","Add item to row " . $user['login']);
-    } 
+    }
+	$number_entries_in_queue = $queue_for_synch_users->numberOfItems();
   }  
+}
+
+function queue_for_synch_users_process() {
+  watchdog("synch_users_from_external_database","Execute record in queue");
 }
