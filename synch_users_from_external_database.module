@@ -19,24 +19,32 @@ function start_synch_users_from_external_database() {
   // Write to watch dog
   watchdog ("synch_users_from_external_database","Start synch URL visited");
 
-  // Define queue  
-  $queue_for_synch_users = DrupalQueue::get('queue_for_synch_users');
+  // Define queue
+  $queues = module_invoke_all('cron_queue_info');
+  $queue_for_synch = DrupalQueue::get('queue_for_synch_users');
+  $queue_info = $queues['queue_for_synch_users'];
   $queues['$queue_for_synch_users'] = array(
     'worker callback' => 'queue_for_synch_users_process',
     'time' => 10,
   );
   
   // Check elements in queue
-  if ($queue_for_synch_users->numberOfItems()) {
-    // Write to watch dog
-    $number_entries_in_queue = $queue_for_synch_users->numberOfItems();
+  if ($queue_for_synch->numberOfItems()) {
+	// Write to watch dog
+	$number_entries_in_queue = $queue_for_synch->numberOfItems();
     watchdog ("synch_users_from_external_database","The queue is not empty and has " . $number_entries_in_queue . " records. Begin executing records...");
+	
+	while ($item = $queue_for_synch->claimItem()) {
+      call_user_func($queue_info['worker callback'], $item->data);
+      $queue_for_synch->deleteItem($item);
+	}
+	
   } else
   {
-    // Write to watch dog
-    watchdog ("synch_users_from_external_database","The queue is empty, start to fill...");
+	// Write to watch dog
+	watchdog ("synch_users_from_external_database","The queue is empty, start to fill...");
  	
-    $users = array(
+	$users = array(
       array(
         "login" => "user001",
         "fullname" => "fullname001",
@@ -55,13 +63,13 @@ function start_synch_users_from_external_database() {
         "email" => "user003@user.user",
         "personnel_number" => "003"
       ),
-      array(
+	  array(
         "login" => "user004",
         "fullname" => "fullname004",
         "email" => "user004@user.user",
         "personnel_number" => "004"
       ),
-      array(
+	  array(
         "login" => "user005",
         "fullname" => "fullname005",
         "email" => "user005@user.user",
@@ -77,6 +85,6 @@ function start_synch_users_from_external_database() {
   }  
 }
 
-function queue_for_synch_users_process() {
+function queue_for_synch_users_process($data) {
   watchdog("synch_users_from_external_database","Execute record in queue");
 }
