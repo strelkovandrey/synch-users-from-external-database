@@ -27,10 +27,8 @@ function start_synch_users_from_external_database() {
   
   // Check number of items in queue
   if ($queue_for_synch_users_from_external_database->numberOfItems()) {
-	// Queue is not empty, begin executing items  
-	$number_entries_in_queue = $queue_for_synch_users_from_external_database->numberOfItems();
-    watchdog ("synch_users_from_external_database","The queue is not empty and has " . $number_entries_in_queue . " records. Begin executing records...");
-	
+	// Queue is not empty, begin create/update users
+	watchdog ("synch_users_from_external_database","The queue is not empty, begin create or update users");
   } else
   {
 	// Queue is empty, begin fill queue items
@@ -48,24 +46,6 @@ function start_synch_users_from_external_database() {
         "fullname" => "fullname002",
         "email" => "user002@user.user",
         "personnel_number" => "002"
-      ),
-      array(
-        "login" => "user003",
-        "fullname" => "fullname003",
-        "email" => "user003@user.user",
-        "personnel_number" => "003"
-      ),
-	  array(
-        "login" => "user004",
-        "fullname" => "fullname004",
-        "email" => "user004@user.user",
-        "personnel_number" => "004"
-      ),
-	  array(
-        "login" => "user005",
-        "fullname" => "fullname005",
-        "email" => "user005@user.user",
-        "personnel_number" => "005"
       )
     );	
 	
