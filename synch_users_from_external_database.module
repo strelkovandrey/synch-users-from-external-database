@@ -13,36 +13,28 @@ function synch_users_from_external_database_menu() {
 }
 
 /**
- * Executing synch.
+ * Executing synch
  */
 function start_synch_users_from_external_database() {
-  // Write to watch dog
-  watchdog ("synch_users_from_external_database","Start synch URL visited");
+  watchdog ("synch_users_from_external_database","Users synch started");
 
-  // Define queue
-  $queues = module_invoke_all('cron_queue_info');
-  $queue_for_synch = DrupalQueue::get('queue_for_synch_users');
-  $queue_info = $queues['queue_for_synch_users'];
+  $queue_for_synch_users_from_external_database = DrupalQueue::get('queue_for_synch_users');
   $queues['$queue_for_synch_users'] = array(
     'worker callback' => 'queue_for_synch_users_process',
     'time' => 10,
+	'skip on cron' => TRUE,
   );
   
-  // Check elements in queue
-  if ($queue_for_synch->numberOfItems()) {
-	// Write to watch dog
-	$number_entries_in_queue = $queue_for_synch->numberOfItems();
+  // Check number of items in queue
+  if ($queue_for_synch_users_from_external_database->numberOfItems()) {
+	// Queue is not empty, begin executing items  
+	$number_entries_in_queue = $queue_for_synch_users_from_external_database->numberOfItems();
     watchdog ("synch_users_from_external_database","The queue is not empty and has " . $number_entries_in_queue . " records. Begin executing records...");
-	
-	while ($item = $queue_for_synch->claimItem()) {
-      call_user_func($queue_info['worker callback'], $item->data);
-      $queue_for_synch->deleteItem($item);
-	}
 	
   } else
   {
-	// Write to watch dog
-	watchdog ("synch_users_from_external_database","The queue is empty, start to fill...");
+	// Queue is empty, begin fill queue items
+	watchdog ("synch_users_from_external_database","The queue is empty, fetching data from external database");
  	
 	$users = array(
       array(
@@ -87,4 +79,46 @@ function start_synch_users_from_external_database() {
 
 function queue_for_synch_users_process($data) {
   watchdog("synch_users_from_external_database","Execute record in queue");
+}
+
+/**
+ * Get users data
+ */
+function get_users_data() {
+  $users_source_database = array(
+  'host' => 'localhost', 
+  'database' => 'db-name',
+  'username' => 'db-username', 
+  'password' => 'db-password', 
+  'driver' => 'mysql',
+  );
+  
+  Database::addConnectionInfo('synch_users_from_external_database', 'default', $users_source_database);
+  
+  db_set_active('synch_users_from_external_database');
+  
+  db_set_active();
+}
+ 
+/**
+ * Create user
+ */
+function create_user($user_data) {
+  user_save(NULL, array(
+    'name' => $user_data["login"],
+    'mail' => $user_data["email"],
+    'init' => $user_data["email"],
+	'field_user_full_name' => array(LANGUAGE_NONE => array(array('value' => $user_data["personnel_number"]))),
+    'status' => 1,
+    'roles' => array(DRUPAL_AUTHENTICATED_RID => TRUE),
+  ));
+  
+  watchdog("synch_users_from_external_database","Create user with login: " . $user_data["login"]);
+}
+
+/**
+ * Update user
+ */
+function update_users($uid, $user_data) {
+
 }
