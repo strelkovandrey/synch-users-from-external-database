@@ -1,104 +1,137 @@
 <?php
 
 /**
- * Implements hook_menu().
+ * Implements hook_cron_queue_info().
  */
-function synch_users_from_external_database_menu() {
-  $items['user/synch'] = array(
-    'title' => '',
-    'page callback' => 'start_synch_users_from_external_database',
-    'access callback' => TRUE,
+function synch_users_cron_queue_info() {
+  $queue['synch_users_queue'] = array(
+    'worker callback' => 'synch_users_item_process',
+    'time' => 10,
   );
-  return $items;
+  return $queue;
 }
 
 /**
- * Executing synch
+ * Implements hook_cron().
  */
-function start_synch_users_from_external_database() {
-  watchdog ("synch_users_from_external_database","Users synch started");
-
-  $queue_for_synch_users_from_external_database = DrupalQueue::get('queue_for_synch_users');
-  $queues['$queue_for_synch_users'] = array(
-    'worker callback' => 'queue_for_synch_users_process',
-    'time' => 10,
-	'skip on cron' => TRUE,
-  );
-  
-  // Check number of items in queue
-  if ($queue_for_synch_users_from_external_database->numberOfItems()) {
-	// Queue is not empty, begin create/update users
-	watchdog ("synch_users_from_external_database","The queue is not empty, begin create or update users");
-  } else
-  {
-	// Queue is empty, begin fill queue items
-	watchdog ("synch_users_from_external_database","The queue is empty, fetching data from external database");
- 	
-	$users = array(
-      array(
-        "login" => "user001",
-        "fullname" => "fullname001",
-        "email" => "user001@user.user",
-        "personnel_number" => "001"
-      ),
-      array(
-        "login" => "user002",
-        "fullname" => "fullname002",
-        "email" => "user002@user.user",
-        "personnel_number" => "002"
-      )
-    );	
+function synch_users_cron() {
+   watchdog("synch_users","Synch users cron");
+  // Loading users data from external database
+  $items = synch_users_load_data();
+ 
+  if ($items) {
+    // Create queue
+    $queue = DrupalQueue::get('synch_users_queue');
+	$number_of_items_in_queue = $queue->numberOfItems();
+	watchdog("synch_users","Number of items: " . $number_of_items_in_queue);
 	
-    foreach ( $users as $user ) {
-      $queue_for_synch_users->createItem($user);
-	  watchdog("synch_users_from_external_database","Add item to row " . $user['login']);
+    // Filling queue by items from external database
+    foreach ($items as $item) {
+      $queue->createItem($item);
+	  $number_of_items_in_queue = $queue->numberOfItems();
+	  watchdog("synch_users","Number of items after create item: " . $number_of_items_in_queue);
     }
-	$number_entries_in_queue = $queue_for_synch_users->numberOfItems();
-  }  
+  }
 }
+function synch_users_item_process($data) {
+  watchdog("synch_users","Process item: " . $data['login']);
 
-function queue_for_synch_users_process($data) {
-  watchdog("synch_users_from_external_database","Execute record in queue");
+  $query = new EntityFieldQuery();
+  $result = $query
+    ->entityCondition('entity_type', 'user')
+    ->fieldCondition('field_user_personnel_number', 'value', $data['personnel_number'])
+    ->execute();
+  if ($result) {	
+    $uids = array_keys($result['user']);
+    foreach ($uids as $uid) {
+	  watchdog("synch_users","Users already exists: ". $uid);
+	  update_user($uid,$data);
+	}
+    } else {
+	  create_user($data);
+    }  
 }
 
 /**
  * Get users data
  */
-function get_users_data() {
-  $users_source_database = array(
-  'host' => 'localhost', 
-  'database' => 'db-name',
-  'username' => 'db-username', 
-  'password' => 'db-password', 
-  'driver' => 'mysql',
-  );
-  
-  Database::addConnectionInfo('synch_users_from_external_database', 'default', $users_source_database);
-  
-  db_set_active('synch_users_from_external_database');
-  
-  db_set_active();
+function synch_users_load_data() {
+  $users = array(
+    array(
+      "login" => "JuravelNazar84",
+      "email" => "JuravelNazar84@mail.ru",
+      "personnel_number" => "023491"
+    ),
+	array(
+      "login" => "FrolovLyubosmyisl280",
+      "email" => "FrolovLyubosmyisl280@mail.ru",
+      "personnel_number" => "323023"
+    ),
+	array(
+	  "login" => "SekunovSergey72",
+      "email" => "SekunovSergey72@mail.ru",
+      "personnel_number" => "012981"
+    ),
+	array(
+	  "login" => "OrlovaElvira96",
+      "email" => "OrlovaElvira96@mail.ru",
+      "personnel_number" => "971011"
+    ),
+	array(
+	  "login" => "AndronovArseniy316",
+      "email" => "AndronovArseniy316@mail.ru",
+      "personnel_number" => "001221"
+    ),
+	array(
+	  "login" => "MarkovaMilena229",
+      "email" => "MarkovaMilena229@mail.ru",
+      "personnel_number" => "980111"
+    ),
+	array(
+	  "login" => "KonyaginaVera355",
+      "email" => "KonyaginaVera355@mail.ru",
+      "personnel_number" => "123852"
+    ),
+	array(
+	  "login" => "ZaharovaAnfisa312",
+      "email" => "ZaharovaAnfisa312@mail.ru",
+      "personnel_number" => "122491"
+    ),
+	array(
+	  "login" => "MarkovAverkiy180",
+      "email" => "MarkovAverkiy180@mail.ru",
+      "personnel_number" => "563254"
+    ),
+	array(
+	  "login" => "asdATarskayaDjuletta307",
+      "email" => "sdTarskayaDjuletta307@mail.ru",
+      "personnel_number" => "34564123"
+    ),
+  );  
+return $users;
 }
- 
+
 /**
  * Create user
  */
-function create_user($user_data) {
+function create_user($data) {
   user_save(NULL, array(
-    'name' => $user_data["login"],
-    'mail' => $user_data["email"],
-    'init' => $user_data["email"],
-	'field_user_full_name' => array(LANGUAGE_NONE => array(array('value' => $user_data["personnel_number"]))),
+    'name' => $data["login"],
+    'mail' => $data["email"],
+    'init' => $data["email"],
+	'field_user_personnel_number' => array(LANGUAGE_NONE => array(array('value' => $data["personnel_number"]))),
     'status' => 1,
     'roles' => array(DRUPAL_AUTHENTICATED_RID => TRUE),
   ));
-  
-  watchdog("synch_users_from_external_database","Create user with login: " . $user_data["login"]);
+  watchdog("synch_users","Created user: " . $data['login']);
 }
 
 /**
  * Update user
  */
-function update_users($uid, $user_data) {
-
+function update_user($uid,$data) {
+  $user_fields = user_load($uid); 
+  $user_fields->name = $data['login'];
+  $user_fields->mail = $data['email'];
+  user_save($user_fields);
 }
