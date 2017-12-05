@@ -6,7 +6,7 @@
 function synch_users_cron_queue_info() {
   $queue['synch_users_queue'] = array(
     'worker callback' => 'synch_users_item_process',
-    'time' => 10,
+    'time' => 30,
   );
   return $queue;
 }
@@ -15,104 +15,47 @@ function synch_users_cron_queue_info() {
  * Implements hook_cron().
  */
 function synch_users_cron() {
-   watchdog("synch_users","Synch users cron");
-  // Loading users data from external database
-  $items = synch_users_load_data();
- 
-  if ($items) {
-    // Create queue
-    $queue = DrupalQueue::get('synch_users_queue');
-	$number_of_items_in_queue = $queue->numberOfItems();
-	watchdog("synch_users","Number of items: " . $number_of_items_in_queue);
-	
-    // Filling queue by items from external database
-    foreach ($items as $item) {
-      $queue->createItem($item);
-	  $number_of_items_in_queue = $queue->numberOfItems();
-	  watchdog("synch_users","Number of items after create item: " . $number_of_items_in_queue);
+  // Create queue
+  $queue = DrupalQueue::get('synch_users_queue'); 
+  watchdog("synch_users","Executing synch employees, remaining: " . $queue->numberOfItems());
+  // Check if queue is empty - fill them
+  if ($queue->numberOfItems() == 0) {
+	// Connect to source database with employees information
+    $connect_mysql = new mysqli("localhost", "mysql", "mysql", "dblink_oracle");
+	$sql = "SELECT login, email, personnel_number FROM company_employees";
+	$results = $connect_mysql->query($sql);
+	if ($results->num_rows > 0) {
+      while($result = $results->fetch_assoc()) {
+		// Add item to queue
+        $queue->createItem($result);
+	  }
     }
+	$connect_mysql->close();
   }
 }
-function synch_users_item_process($data) {
-  watchdog("synch_users","Process item: " . $data['login']);
-
-  $query = new EntityFieldQuery();
-  $result = $query
-    ->entityCondition('entity_type', 'user')
-    ->fieldCondition('field_user_personnel_number', 'value', $data['personnel_number'])
-    ->execute();
-  if ($result) {	
-    $uids = array_keys($result['user']);
-    foreach ($uids as $uid) {
-	  watchdog("synch_users","Users already exists: ". $uid);
-	  update_user($uid,$data);
-	}
-    } else {
-	  create_user($data);
-    }  
-}
 
 /**
- * Get users data
+ * Process queue item.
  */
-function synch_users_load_data() {
-  $users = array(
-    array(
-      "login" => "JuravelNazar84",
-      "email" => "JuravelNazar84@mail.ru",
-      "personnel_number" => "023491"
-    ),
-	array(
-      "login" => "FrolovLyubosmyisl280",
-      "email" => "FrolovLyubosmyisl280@mail.ru",
-      "personnel_number" => "323023"
-    ),
-	array(
-	  "login" => "SekunovSergey72",
-      "email" => "SekunovSergey72@mail.ru",
-      "personnel_number" => "012981"
-    ),
-	array(
-	  "login" => "OrlovaElvira96",
-      "email" => "OrlovaElvira96@mail.ru",
-      "personnel_number" => "971011"
-    ),
-	array(
-	  "login" => "AndronovArseniy316",
-      "email" => "AndronovArseniy316@mail.ru",
-      "personnel_number" => "001221"
-    ),
-	array(
-	  "login" => "MarkovaMilena229",
-      "email" => "MarkovaMilena229@mail.ru",
-      "personnel_number" => "980111"
-    ),
-	array(
-	  "login" => "KonyaginaVera355",
-      "email" => "KonyaginaVera355@mail.ru",
-      "personnel_number" => "123852"
-    ),
-	array(
-	  "login" => "ZaharovaAnfisa312",
-      "email" => "ZaharovaAnfisa312@mail.ru",
-      "personnel_number" => "122491"
-    ),
-	array(
-	  "login" => "MarkovAverkiy180",
-      "email" => "MarkovAverkiy180@mail.ru",
-      "personnel_number" => "563254"
-    ),
-	array(
-	  "login" => "asdATarskayaDjuletta307",
-      "email" => "sdTarskayaDjuletta307@mail.ru",
-      "personnel_number" => "34564123"
-    ),
-  );  
-return $users;
+function synch_users_item_process($data) {
+  // Search existing user by personnel number, if founded - update
+  $uids = db_query("
+    SELECT u.uid FROM {users} u INNER JOIN {field_data_field_user_personnel_number} f
+    ON u.uid = f.entity_id WHERE f.field_user_personnel_number_value = :personnel_number",
+    array(':personnel_number' => $data['personnel_number']))->fetchAll();
+  if ($uids) {
+    foreach ($uids as $uid) {
+	  // Update founded existing users
+      update_user($uid->uid,$data);
+    }
+  } else {
+	// Create new users
+	create_user($data);
+    }
 }
 
 /**
- * Create user
+ * Create user.
  */
 function create_user($data) {
   user_save(NULL, array(
@@ -123,11 +66,10 @@ function create_user($data) {
     'status' => 1,
     'roles' => array(DRUPAL_AUTHENTICATED_RID => TRUE),
   ));
-  watchdog("synch_users","Created user: " . $data['login']);
 }
 
 /**
- * Update user
+ * Update user.
  */
 function update_user($uid,$data) {
   $user_fields = user_load($uid); 
