@@ -2,6 +2,7 @@
 
 /**
  * Implements hook_cron_queue_info().
+ * 30 sec - Queue fill and 9031 remaining -> 6283 -> 3554 -> 692
  */
 function synch_users_cron_queue_info() {
   $queue['synch_users_queue'] = array(
